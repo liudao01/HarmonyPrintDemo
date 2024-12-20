@@ -1,0 +1,49 @@
+{
+  "app": {
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "C:\\Users\\Subo\\.ohos\\config\\auto_debug_developer_com.example.myapplication_30086000772604949.cer",
+          "storePassword": "0000001BB895B965C08277CDCA8933C2AC98A22031D09DE2933A759AFD6C7CFA4AE5568BDD84ED6EA8A64F",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001B9FD889F7D2E65EEA2098C5618B9A359A940E2BFB1A3AB9D0F3CF54C99C59E70D2D869624EC057D",
+          "profile": "C:\\Users\\Subo\\.ohos\\config\\auto_debug_developer_com.example.myapplication_30086000772604949.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "C:\\Users\\Subo\\.ohos\\config\\auto_debug_developer_com.example.myapplication_30086000772604949.p12"
+        }
+      }
+    ],
+    "compileSdkVersion": 9,
+    "compatibleSdkVersion": 9,
+    "products": [
+      {
+        "name": "default",
+        "signingConfig": "default",
+      }
+    ],
+    "buildModeSet": [
+      {
+        "name": "debug",
+      },
+      {
+        "name": "release"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "name": "entry",
+      "srcPath": "./entry",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    }
+  ]
+}
