@@ -943,7 +943,7 @@ function isUsbPrinter(device: usb.USBDevice): boolean {
 let outEndPoint: usb.USBEndpoint | null;
 let inEndPoint: usb.USBEndpoint | null;
 
-async function usbConnect(usbDevice: usb.USBDevice): Promise<void> {
+async function usbConnect(usbDevice: usb.USBDevice):  Promise<{ devicepipe: usb.USBDevicePipe, interfaces: usb.USBInterface }> {
   let hasRight = await getUsbRight(usbDevice.name);
   console.log("hasRight:" + hasRight);
   if (!hasRight) {
@@ -971,6 +971,7 @@ async function usbConnect(usbDevice: usb.USBDevice): Promise<void> {
       }
     }
   }
+  return {devicepipe,interfaces}
 }
 
 class SheetInfoClass {
@@ -978,16 +979,15 @@ class SheetInfoClass {
   action: () => void;
   // 新增点击回调属性
   onDeviceSelected: ((device: usb.USBDevice) => void) | null = null;
+
   constructor(device: usb.USBDevice) {
     this.title = `${device.name} ${device.productName} \n` || `USB设备\n`;
     this.action = () => {
       if (isUsbPrinter(device)) {
-        usbConnect(device)
-        if (inEndPoint && outEndPoint) {
+         if (inEndPoint && outEndPoint) {
           // Index.instance.selectedDevice = device;
           promptAction.showToast({
             message: `选择了 ${device.name}`
-
           });
           // 调用点击回调（如果有设置的话）
           if (this.onDeviceSelected) {
@@ -1014,7 +1014,8 @@ struct Index {
   @State message: string = '鸿蒙开发demo';
   // 新增一个属性用于存储当前选中的设备（根据你的需求可灵活调整这里的处理逻辑）
   @State selectedDevice: usb.USBDevice | null = null;
-
+  @State devicepipe: usb.USBDevicePipe | null = null;
+  @State interfaces: usb.USBInterface | null = null;
   build() {
     Row() {
       Column() {
@@ -1025,12 +1026,19 @@ struct Index {
           .width('90%')
           .height('15%')
           .margin(10)
-        Button(this.selectedDevice !== null ? "已连接" : "点击连接", { type: ButtonType.Normal })
+        Button(this.selectedDevice !== null ? "断开连接" : "点击连接", { type: ButtonType.Normal })
           .onClick(() => {
             if(this.selectedDevice !== null){
-              promptAction.showToast({
-                message: '已连接'
-              })
+              this.selectedDevice =  null;
+
+              //关闭端口
+              let releaseInterfaceResult = usb.releaseInterface(this.devicepipe, this.interfaces);
+              console.log("releaseInterfaceResult:" + releaseInterfaceResult);
+              let closePipeResult = usb.closePipe(this.devicepipe);
+              console.log("closePipeResult:" + closePipeResult);
+              // promptAction.showToast({
+              //   message: '已连接'
+              // })
               return;
             }
             let usbDevices: Array<usb.USBDevice> | null = getUsbPrinters();
@@ -1038,8 +1046,13 @@ struct Index {
               let sheetsData: Array<SheetInfoClass> = usbDevices.map((device) => {
                 let sheetInfo = new SheetInfoClass(device);
                 //函数赋值
-                sheetInfo.onDeviceSelected = (selectedDevice) => {
+                sheetInfo.onDeviceSelected = async (selectedDevice) => {
                   this.selectedDevice = selectedDevice;
+                  console.log("selectedDevice:" + selectedDevice.productName);
+                  //进行连接并保存返回的devicepipe和interfaces实例
+                  let result = await usbConnect(this.selectedDevice);
+                  this.devicepipe = result.devicepipe;
+                  this.interfaces = result.interfaces;
                 }
                 return sheetInfo;
               });
@@ -1094,4 +1107,5 @@ struct Index {
     }.backgroundColor(0xFFFEEE)
     .height('100%')
   }
+
 }
