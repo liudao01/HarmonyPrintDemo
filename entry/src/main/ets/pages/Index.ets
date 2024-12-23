@@ -664,6 +664,14 @@ function setPrinter(command: number, value: number) {
   buffer.push(value);
   return buffer;
 }
+function stringToUint8Array(inputString: string): Uint8Array {
+  return new Uint8Array([...inputString].map(char => char.charCodeAt(0)));
+}
+
+// // 使用示例
+// let myString = "Hello, World!";
+// let resultArray = stringToUint8Array(myString);
+// console.log(resultArray);
 
 function printNote(): Uint8Array {
   let noteData: number[] = new Array();
@@ -908,14 +916,41 @@ async function getUsbRight(usbName: string | null) {
   console.log("result:" + result);
   return result;
 }
-
+// async function read(devicepipe: usb.USBDevicePipe, statusEndpoint: usb.USBEndpoint, queryCommand: Uint8Array): Promise<void> {
+//   // 读取
+//   let writeLength = await bulkTransfer(devicepipe, statusEndpoint, queryCommand, 5000);
+//   console.log("查询命令发送长度: " + writeLength);
+// }
 async function bulkTransfer(devicepipe: usb.USBDevicePipe, endPoint: usb.USBEndpoint, buffer: Uint8Array,
   timeout?: number) {
   const result: number = await usb.bulkTransfer(devicepipe, endPoint, buffer, timeout);
+  const result2: number = await usb.bulkTransfer(devicepipe, endPoint, buffer, timeout);
   console.log("bulkTransfer result:" + result);
+  console.log("bulkTransfer result2:" + result2);
   return result;
 }
-
+async function receivePrinterStatus(devicepipe: usb.USBDevicePipe, statusEndpoint: usb.USBEndpoint): Promise<void> {
+  // 假设接收状态数据的缓冲区大小，这个大小可能需要根据打印机返回数据的实际情况调整
+  let buffer = new Uint8Array(1024);
+  console.log("开始: " );
+  let readLength = await bulkTransfer(devicepipe, statusEndpoint, buffer, 5000);
+  console.log("接收状态信息长度: " + readLength);
+  // 根据打印机文档解析状态信息
+  if (readLength > 0) {
+    // 这里只是示例，实际解析需要根据打印机的状态返回格式
+    let statusData = buffer.slice(0, readLength);
+    console.log("接收到的状态数据: " + statusData);
+    // 假设状态数据的第一个字节表示打印机状态
+    // let printerStatus = statusData[0];
+    // if (printerStatus === 0) {
+    //   console.log("打印机正常");
+    // } else if (printerStatus === 1) {
+    //   console.log("打印机缺纸");
+    // } else {
+    //   console.log("打印机状态未知");
+    // }
+  }
+}
 function getUsbPrinters(): Array<usb.USBDevice> | null {
   let usbDevice: usb.USBDevice | null = null;
   let devicesList: Array<usb.USBDevice> = usb.getDevices();
@@ -968,11 +1003,20 @@ async function usbConnect(usbDevice: usb.USBDevice): Promise<void> {
         outEndPoint = ep;
       } else if (ep.direction === 0x80) {
         inEndPoint = ep;
+        console.error("开始复制inEndPoint :"+JSON.stringify(inEndPoint));
       }
     }
   }
 }
-
+//断开连接
+async function usbDisconnect(devicepipe: usb.USBDevicePipe, interfaces: usb.USBInterface): Promise<void> {
+  // 释放接口
+  let releaseInterfaceResult = usb.releaseInterface(devicepipe, interfaces);
+  console.log("releaseInterfaceResult:" + releaseInterfaceResult);
+  // 关闭设备管道
+  let closePipeResult = usb.closePipe(devicepipe);
+  console.log("closePipeResult:" + closePipeResult);
+}
 class SheetInfoClass {
   title: string;
   action: () => void;
@@ -980,14 +1024,13 @@ class SheetInfoClass {
   onDeviceSelected: ((device: usb.USBDevice) => void) | null = null;
   constructor(device: usb.USBDevice) {
     this.title = `${device.name} ${device.productName} \n` || `USB设备\n`;
-    this.action = () => {
+    this.action = async () => {
       if (isUsbPrinter(device)) {
-        usbConnect(device)
+        await usbConnect(device)
         if (inEndPoint && outEndPoint) {
           // Index.instance.selectedDevice = device;
           promptAction.showToast({
             message: `选择了 ${device.name}`
-
           });
           // 调用点击回调（如果有设置的话）
           if (this.onDeviceSelected) {
@@ -1015,6 +1058,8 @@ struct Index {
   // 新增一个属性用于存储当前选中的设备（根据你的需求可灵活调整这里的处理逻辑）
   @State selectedDevice: usb.USBDevice | null = null;
 
+  @State textAreaContent: string = '';
+
   build() {
     Row() {
       Column() {
@@ -1025,12 +1070,26 @@ struct Index {
           .width('90%')
           .height('15%')
           .margin(10)
+
+          .onChange((value: string) => {
+            this.textAreaContent = value;
+          })
         Button(this.selectedDevice !== null ? "已连接" : "点击连接", { type: ButtonType.Normal })
           .onClick(() => {
             if(this.selectedDevice !== null){
-              promptAction.showToast({
-                message: '已连接'
-              })
+              let devicepipe: usb.USBDevicePipe = usb.connectDevice(this.selectedDevice);
+              let interfaces: usb.USBInterface = this.selectedDevice.configs[0].interfaces[0];
+              usbDisconnect(devicepipe, interfaces).then(() => {
+                promptAction.showToast({
+                  message: '已断开连接'
+                });
+                this.selectedDevice = null;
+              }).catch((error) => {
+                console.error("断开连接出现错误:", error);
+                promptAction.showToast({
+                  message: '断开连接失败'
+                });
+              });
               return;
             }
             let usbDevices: Array<usb.USBDevice> | null = getUsbPrinters();
@@ -1064,29 +1123,61 @@ struct Index {
               });
             }
           }).margin(10).width('90%')
-        Button("打印内容", { type: ButtonType.Normal }).onClick(() => {
+
+        Button("打印内容", { type: ButtonType.Normal }).onClick(async () => {
+          if (this.selectedDevice === null) {
+            promptAction.showToast({ message: "请检查USB打印机是否接入" })
+            return;
+          }
           promptAction.showToast({ message: "开始打印，请稍后......" })
-          // if (this.selectedDevice === null) {
-          //   promptAction.showToast({ message: "请检查USB打印机是否接入" })
-          //   return;
-          // }
-          // promptAction.showToast({ message: "小票打印完成" })
+          let devicepipe: usb.USBDevicePipe = usb.connectDevice(this.selectedDevice);
+
+          let buffer = stringToUint8Array(this.textAreaContent);
+          let writeLength = await bulkTransfer(devicepipe, outEndPoint!, buffer, 5000);
+          console.log("writeLength:" + writeLength);
+          promptAction.showToast({ message: "小票打印完成" })
         }).margin(10).width('90%')
         Button("点击打印小票", { type: ButtonType.Normal }).onClick(() => {
-          promptAction.showToast({ message: "开始打印，请稍后......" })
+
           let usbDevice: usb.USBDevice | null = getUsbPrinter();
           if (usbDevice === null) {
             promptAction.showToast({ message: "请检查USB打印机是否接入" })
             return;
           }
+          promptAction.showToast({ message: "开始打印，请稍后......" })
           usbPrint(usbDevice);
           promptAction.showToast({ message: "小票打印完成" })
         }).margin(10).width('90%')
-        Button("查询打印机状态", { type: ButtonType.Normal }).onClick(() => {
-          // if (this.selectedDevice === null) {
-          //   promptAction.showToast({ message: "请检查USB打印机是否接入" })
-          //   return;
-          // }
+        Button("查询打印机状态", { type: ButtonType.Normal }).onClick(async () => {
+          if (this.selectedDevice === null) {
+            promptAction.showToast({ message: "请检查USB打印机是否接入" })
+            return;
+          }
+          let devicepipe: usb.USBDevicePipe = usb.connectDevice(this.selectedDevice);
+          let interfaces: usb.USBInterface = this.selectedDevice.configs[0].interfaces[0];
+
+          console.log("查询端口: " );
+
+          console.log(`端口 inEndPoint ${JSON.stringify(inEndPoint)}`);
+          console.log(`端口 outEndPoint ${JSON.stringify(outEndPoint)}`);
+          console.log("读取: " );
+          // let devicepipe: usb.USBDevicePipe = usb.connectDevice(this.selectedDevice);
+          let buffer1: number[] = new Array();
+          buffer1.push(0x10);
+          buffer1.push(0x04);
+          buffer1.push(0x01);
+          // buffer1.push(0x02);
+          let buffer =   pushArray(buffer1)
+
+          // let buffer = stringToUint8Array("100401");
+          let writeLength = await bulkTransfer(devicepipe, outEndPoint!, buffer, 5000)
+          console.log("writeLength:" + writeLength);
+          // receivePrinterStatus(devicepipe,inEndPoint)
+          let buffer2 = new Uint8Array(1024);
+          console.log("开始: " );
+          let readLength = await bulkTransfer(devicepipe, inEndPoint, buffer2, 5);
+          console.log("接收状态信息长度: " + readLength);
+
           // promptAction.showToast({ message: "小票打印完成" })
         }).margin(10).width('90%')
       }
