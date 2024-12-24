@@ -1,3 +1,5 @@
+import { BasePrinterPort } from './BasePrintPort'
+// import usb from '@ohos.usb';
 import promptAction from '@ohos.promptAction'
 import systemDateTime from '@ohos.systemDateTime';
 // 导入USB接口api包。
@@ -5,12 +7,13 @@ import usb from '@ohos.usbManager';
 import contact from '@ohos.contact';
 import image from '@ohos.multimedia.image';
 
-// @ts-ignore
-import iconv from 'iconv-lite';
 import resourceManager from '@ohos.resourceManager';
-var PaperWidth = 576;
 
-function pushArray(arr) {
+// import { util } from '@kit.ArkTS';
+
+let PaperWidth = 576;
+
+function pushArray(arr: number[]) {
   return new Uint8Array(arr);
 
 }
@@ -23,9 +26,9 @@ function pushArray(arr) {
  * @Description: In User Settings Edit
  * @FilePath: \medicaPlatform\test\b.js
  */
-var strTogbk = function () {
-  var data = function(zipData){
-    var re = zipData
+let strTogbk = function () {
+  let data = function(zipData){
+    let re = zipData
       .replace(/#(\d+)\$/g, function (a, b) {
         return Array(+b + 3).join('#');
       })
@@ -46,16 +49,16 @@ var strTogbk = function () {
     G2Uhash = {};
   // @ts-ignore
   !function(data){
-    var k = 0;
+    let k = 0;
     // @ts-ignore
     data = data.match(/..../g);
-    for (var i = 0x81; i <= 0xfe; i++) {
-      for (var j = 0x40; j <= 0xFE; j++) {
+    for (let i = 0x81; i <= 0xfe; i++) {
+      for (let j = 0x40; j <= 0xFE; j++) {
         U2Ghash[data[k++]] = ('%' + i.toString(16) + '%' + j.toString(16))
           .toUpperCase();
       }
     }
-    for (var key in U2Ghash) {
+    for (let key in U2Ghash) {
       G2Uhash[U2Ghash[key]] = key;
     }
   }(data);
@@ -67,11 +70,11 @@ var strTogbk = function () {
   return {
     encode: function (str) {
       return str.replace(/./g, function (a) {
-        var code = a.charCodeAt(0);
+        let code = a.charCodeAt(0);
         if (isAscii(code)) {
           return encodeURIComponent(a);
         } else {
-          var key = code.toString(16);
+          let key = code.toString(16);
           if (key.length != 4) key = ('000' + key).match(/....$/)[0];
           return U2Ghash[key] || a;
         }
@@ -93,23 +96,43 @@ var strTogbk = function () {
   };
 };
 
-function toGbkBytes(str) {
-  var str = strTogbk().encode(str)
-  var byteArr = new Array();
-  for (var i = 0; i < str.length; i++) {
-    var ch = str.charAt(i);
+function toGbkBytes(str: string): number[] {
+  let str2: string = strTogbk().encode(str)
+  let byteArr: number[] = new Array();
+  for (let i = 0; i < str2.length; i++) {
+    let ch = str2.charAt(i);
     if (ch == '%') {
-      var num = str.charAt(i + 1) + str.charAt(i + 2);
-      num = parseInt(num, 16);
-      num = num | (-1 << 8);
-      byteArr.push(num);
+      let num: string = str2.charAt(i + 1) + str2.charAt(i + 2);
+      let num2: number = parseInt(num, 16);
+      let num3: number = num2 | (-1 << 8);
+      byteArr.push(num3);
       i += 2;
     } else {
-      byteArr.push(ch.charCodeAt());
+      byteArr.push(ch.charCodeAt(0));
     }
   }
   return byteArr;
 }
+
+// function toGbkBytes(str: string): number[] {
+//
+//   // 创建一个 TextEncoder 实例，指定编码为 GBK
+//   let textEncoder: util.TextEncoder = new util.TextEncoder('gbk');
+//   // 预估一个足够大的 buffer 大小（这里假设每个字符最多占用 4 个字节）
+//   let bufferSize: number = str.length * 4;
+//   let buffer: ArrayBuffer;
+//   let encodedArray: Uint8Array;
+//   buffer = new ArrayBuffer(bufferSize);
+//   // 创建一个 Uint8Array 视图，用于存储编码结果
+//   let encodeResult: Uint8Array = new Uint8Array(buffer);
+//   // 将字符串编码为 GBK 格式的字节数组
+//   encodeResult = textEncoder.encodeInto(str);
+//
+//   // 输出编码结果
+//   console.info('Encode result: ', encodeResult);
+//   return Array.from(encodeResult);
+//
+// }
 
 /********************************************Esc/Pos接口封装*****************************************************/
 /**
@@ -117,7 +140,7 @@ function toGbkBytes(str) {
  * @param 需要打印的文本数据
  * @return result 返回一个要打印的byte数组类型的数据
  */
-function printText(content) {
+function printText(content: string) {
   let contentData = toGbkBytes(content);
   return contentData;
 }
@@ -132,7 +155,8 @@ function printText(content) {
  * @param {*} left 左边距，当对齐方式为 无对齐时，可以设置该值调整左边距 （注意左边距须为8的整数倍，否则会有异常）
  * @param {*} level   图片二值化阀值，用来调试图片二值化效果。   取值范围  0-255  建议调试值取值范围  96-196  不建议取值为255或接近255。因为取值为255或接近255时，可能导致图片取点全黑，可能损坏打印机。
  */
-function printImage(data, width, height, alignType, paperWidth, left, level) {
+function printImage(data: number[], width: number, height: number, alignType: number, paperWidth: number, left: number,
+                    level: number): Uint8Array {
   if (level < 0 || level > 255 || level === 255) {
     level = 128;
   }
@@ -145,9 +169,9 @@ function printImage(data, width, height, alignType, paperWidth, left, level) {
   console.log("pic level:", level);
 
   // 每行的真实图片数据的字节数
-  var picBytes = 0;
+  let picBytes = 0;
   // 每行左边距的字节数
-  var leftBytes = 0;
+  let leftBytes = 0;
   switch (alignType) {
     case 0:
       left = 0;
@@ -177,7 +201,7 @@ function printImage(data, width, height, alignType, paperWidth, left, level) {
   }
 
   // 余值
-  var last = width % 8;
+  let last = width % 8;
   // 如果每行的图片数据在存入整数个字节后有剩余，则增加一个字节来存入剩余的数据
   if (last != 0) {
     picBytes = width / 8 + 1;
@@ -193,18 +217,18 @@ function printImage(data, width, height, alignType, paperWidth, left, level) {
   // 4 指的是每行数据发送给打印机时所加的指令头和指令尾。
   /** 发送个打印机的指令格式为 0x16 num data 0x15 0x01 **/
   //byte[] imgBuf = new byte[(picBytes + leftBytes + 4) * height];
-  var imgBuf = new Array();
+  let imgBuf: number[] = new Array();
   // 一行的有效数据
-  var perLineBuf = new Array();
-  var p = [];
-  var s = 0;
-  var pixel;
-  var B = 0, G = 0, R = 0;
+  let perLineBuf: number[] = new Array();
+  let p: number[] = [];
+  let s = 0;
+  let pixel: number;
+  let B = 0, G = 0, R = 0;
   // 对图像的每个像素进行格式转换
-  for (var x = 0; x < height; x++) {
+  for (let x = 0; x < height; x++) {
     perLineBuf = new Array();
-    for (var z = 0; z < width / 8; z++) {
-      for (var m = 0; m < 8; m++) {
+    for (let z: number = 0; z < width / 8; z++) {
+      for (let m: number = 0; m < 8; m++) {
         // retrieve color of all channels
         R = data[8 * 4 * z + m * 4+4 * width * x];
         G = data[8 * 4 * z + m * 4 + 4 * width * x+1];
@@ -219,7 +243,7 @@ function printImage(data, width, height, alignType, paperWidth, left, level) {
           p[m] = 0;
         }
       }
-      var value = (p[0] << 7) | (p[1] << 6) | (p[2] << 5) | (p[3] << 4) | (p[4] << 3) | (p[5] << 2)
+      let value = (p[0] << 7) | (p[1] << 6) | (p[2] << 5) | (p[3] << 4) | (p[4] << 3) | (p[5] << 2)
         | (p[6] << 1) | p[7];
       perLineBuf.push(value);
     }
@@ -228,17 +252,17 @@ function printImage(data, width, height, alignType, paperWidth, left, level) {
     imgBuf.push((picBytes + leftBytes));
 
     // 补0
-    for (var j = 0; j < left / 8; j++) {
+    for (let j = 0; j < left / 8; j++) {
       imgBuf.push(0);
     }
 
-    for (var n = 0; n < picBytes; n++) {
+    for (let n = 0; n < picBytes; n++) {
       imgBuf.push(perLineBuf[n]);
     }
     imgBuf.push(0x15);
     imgBuf.push(0x01);
   }
-  console.log("imgBuf Len:"+imgBuf.length);
+  console.log("imgBuf Len:" + imgBuf.length);
   console.log("imgBuf:", imgBuf);
   return pushArray(imgBuf);
 }
@@ -246,21 +270,21 @@ function printImage(data, width, height, alignType, paperWidth, left, level) {
 /**
  * 获取条码打印数据
  */
-function printBarCode(barcodeType, param1, param2, param3, content) {
-  var PDF417 = 100;
-  var DATAMATRIX = 101;
-  var QRCODE = 102;
-  var CODE128 = 73;
-  var CODE93 = 72;
-  var UPC_A = 0;
-  var UPC_E = 1;
-  var JAN13 = 2;
-  var JAN8 = 3;
-  var CODE39 = 4;
-  var ITF = 5;
-  var CODABAR = 6;
-  var JAN128 = 7;
-  var realCommand = new Array();
+function printBarCode(barcodeType: number, param1: number, param2: number, param3: number, content: string) {
+  let PDF417 = 100;
+  let DATAMATRIX = 101;
+  let QRCODE = 102;
+  let CODE128 = 73;
+  let CODE93 = 72;
+  let UPC_A = 0;
+  let UPC_E = 1;
+  let JAN13 = 2;
+  let JAN8 = 3;
+  let CODE39 = 4;
+  let ITF = 5;
+  let CODABAR = 6;
+  let JAN128 = 7;
+  let realCommand: number[] = new Array();
   switch (barcodeType) {
     case PDF417:
     case DATAMATRIX:
@@ -269,16 +293,16 @@ function printBarCode(barcodeType, param1, param2, param3, content) {
         param2, param3);
       break;
     case CODE128:
-      var tempCommand = new Array();
-      var strLength = content.length;
-      var tempLength = strLength;
-      var charArray = toGbkBytes(content);
-      var preHasCodeA = false;
-      var preHasCodeB = false;
-      var preHasCodeC = false;
-      var needCodeC = false;
-      for (var i = 0; i < strLength; i++) {
-        var a = charArray[i];
+      let tempCommand: number[] = new Array();
+      let strLength = content.length;
+      let tempLength = strLength;
+      let charArray = toGbkBytes(content);
+      let preHasCodeA = false;
+      let preHasCodeB = false;
+      let preHasCodeC = false;
+      let needCodeC = false;
+      for (let i = 0; i < strLength; i++) {
+        let a = charArray[i];
         if (a >= 0 && a <= 31) { // �����ַ�,��CodeA(ֵΪ[0-31])
           // CODE A
           if (i == 0 || !preHasCodeA) {
@@ -294,7 +318,7 @@ function printBarCode(barcodeType, param1, param2, param3, content) {
         }
         if (a >= 48 && a <= 57) {
           if (!preHasCodeC) {
-            for (var m = 1; m < 9; m++) {
+            for (let m = 1; m < 9; m++) {
               if (i + m != strLength
                 && isNum(charArray[i + m])) {
                 if (m == 8) {
@@ -317,7 +341,7 @@ function printBarCode(barcodeType, param1, param2, param3, content) {
               tempLength += 2;
             }
             if (i != strLength - 1) {
-              var b = charArray[i + 1];
+              let b = charArray[i + 1];
               if (isNum(b)) {
                 tempCommand.push(((a - 48) * 10 + (b - 48)));
                 tempLength--;
@@ -358,10 +382,11 @@ function printBarCode(barcodeType, param1, param2, param3, content) {
  * @return void
  * @Description 执行切纸，打印机得有切刀
  */
-function cutPaper(cutPaperType, n) {
-  let buffer = new Array();
-  if (cutPaperType == 48 || cutPaperType == 49)
+function cutPaper(cutPaperType: number, n: number) {
+  let buffer: number[] = new Array();
+  if (cutPaperType == 48 || cutPaperType == 49) {
     n = 0;
+  }
   buffer.push(0x1d);
   buffer.push(0x56);
   buffer.push(cutPaperType);
@@ -373,7 +398,7 @@ function cutPaper(cutPaperType, n) {
  * 打印自检页
  */
 function printSelfCheckingPage() {
-  let buffer = new Array();
+  let buffer: number[] = new Array();
   buffer.push(0x1d);
   buffer.push(0x28);
   buffer.push(0x41);
@@ -388,18 +413,19 @@ function printSelfCheckingPage() {
  * 打印预存储位图
  * @param n 打印预存的第n张位图。n的取值范围[0-7]
  */
-function printDownloadBitmap(n) {
-  let buffer = new Array();
+function printDownloadBitmap(n: number) {
+  let buffer: number[] = new Array();
   buffer.push(0x1c);
   buffer.push(0x50);
   buffer.push(n);
   return buffer;
 }
 
-function getBarcodeCommand1(content, barcodeType, length, param1, param2, param3) {
-  var index = 0;
-  var tmpByte = content;
-  var command = new Array();
+function getBarcodeCommand1(content: number[], barcodeType: number, length: number, param1: number, param2: number,
+                            param3: number) {
+  let index = 0;
+  let tmpByte = content;
+  let command: number[] = new Array();
   command.push(29);
   command.push(119);
   if (param1 >= 2 && param1 <= 6) {
@@ -426,15 +452,15 @@ function getBarcodeCommand1(content, barcodeType, length, param1, param2, param3
   command.push(barcodeType);
   command.push(length);
 
-  for (var j = 0; j < tmpByte.length; j++) {
+  for (let j = 0; j < tmpByte.length; j++) {
     command.push(tmpByte[j]);
   }
   return command;
 }
 
-function getBarcodeCommand2(content, barcodeType, param1, param2, param3) {
-  var tmpByte = toGbkBytes(content);
-  var command = new Array();
+function getBarcodeCommand2(content: string, barcodeType: number, param1: number, param2: number, param3: number) {
+  let tmpByte = toGbkBytes(content);
+  let command: number[] = new Array();
   command.push(29);
   command.push(90);
   command.push(barcodeType - 100);
@@ -445,16 +471,16 @@ function getBarcodeCommand2(content, barcodeType, param1, param2, param3) {
   command.push(param3);
   command.push(tmpByte.length % 256);
   command.push(tmpByte.length / 256);
-  for (var m = 0; m < tmpByte.length; m++) {
+  for (let m = 0; m < tmpByte.length; m++) {
     command.push(tmpByte[m]);
   }
   return command;
 }
 
-function getBarcodeCommand3(content, barcodeType, param1, param2, param3) {
-  var index = 0;
-  var tmpByte = toGbkBytes(content);
-  var command = new Array();
+function getBarcodeCommand3(content: string, barcodeType: number, param1: number, param2: number, param3: number) {
+  let index = 0;
+  let tmpByte = toGbkBytes(content);
+  let command: number[] = new Array();
   command.push(29);
   command.push(119);
   if (param1 >= 2 && param1 <= 6) {
@@ -479,17 +505,18 @@ function getBarcodeCommand3(content, barcodeType, param1, param2, param3) {
   command.push(0x1d);
   command.push(0x6b);
   command.push(barcodeType);
-  for (var j = 0; j < tmpByte.length; j++) {
+  for (let j = 0; j < tmpByte.length; j++) {
     command.push(tmpByte[j]);
   }
   command.push(0);
   return command;
 }
 
-function getBarcodeCommand4(content, barcodeType, length, param1, param2, param3) {
-  var index = 0;
-  var tmpByte = toGbkBytes(content);
-  var command = new Array();
+function getBarcodeCommand4(content: string, barcodeType: number, length: number, param1: number, param2: number,
+                            param3: number) {
+  let index = 0;
+  let tmpByte = toGbkBytes(content);
+  let command: number[] = new Array();
   command.push(29);
   command.push(119);
   if (param1 >= 2 && param1 <= 6) {
@@ -515,13 +542,13 @@ function getBarcodeCommand4(content, barcodeType, length, param1, param2, param3
   command.push(0x6b);
   command.push(barcodeType);
   command.push(length);
-  for (var j = 0; j < tmpByte.length; j++) {
+  for (let j = 0; j < tmpByte.length; j++) {
     command.push(tmpByte[j]);
   }
   return command;
 }
 
-function isNum(temp) {
+function isNum(temp: number) {
   return temp >= 48 && temp <= 57;
 }
 
@@ -532,7 +559,7 @@ function isNum(temp) {
  * @Description 初始化打印机
  */
 function initPrinter() {
-  let buffer = new Array(2);
+  let buffer: number[] = new Array(2);
   buffer.push(0x1b);
   buffer.push(0x40);
   return buffer;
@@ -543,8 +570,8 @@ function initPrinter() {
  * @return 字节数组
  * @Description 设置距离左边距点数
  */
-function setLeftMargin(inchs) {
-  let buffer = new Array();
+function setLeftMargin(inchs: number) {
+  let buffer: number[] = new Array();
   buffer.push(29);
   buffer.push(76);
   buffer.push(inchs % 256);
@@ -561,10 +588,10 @@ function setLeftMargin(inchs) {
  * @return 字节数组
  * @Description 这种打印字体的类型，大小，加粗下划线
  */
-function setFont(mCharacterType, mWidth, mHeight, mBold, mUnderline) {
-  let buffer = new Array()
-  var mFontSize = 0;
-  var mFontMode = 0;
+function setFont(mCharacterType: number, mWidth: number, mHeight: number, mBold: number, mUnderline: number) {
+  let buffer: number[] = new Array()
+  let mFontSize = 0;
+  let mFontMode = 0;
 
   if (mBold != 0 && mBold != 1) {
     mBold = 0;
@@ -608,8 +635,8 @@ function setFont(mCharacterType, mWidth, mHeight, mBold, mUnderline) {
  * @param command Command对象
  * @param value   对其模式： 0-左对齐,1-居中,2-右对齐
  */
-function setPrinter(command, value) {
-  let buffer = new Array();
+function setPrinter(command: number, value: number) {
+  let buffer: number[] = new Array();
   switch (command) {
     case 0: // 打印并进纸 ESC J n
       buffer.push(27); // 16进制码 1B 4A n
@@ -640,30 +667,39 @@ function setPrinter(command, value) {
   return buffer;
 }
 
-function printNote() {
-  var noteData = new Array();
+export function stringToUint8Array(inputString: string): Uint8Array {
+  return new Uint8Array([...inputString].map(char => char.charCodeAt(0)));
+}
 
-  var data1 = initPrinter();
+// // 使用示例
+// let myString = "Hello, World!";
+// let resultArray = stringToUint8Array(myString);
+// console.log(resultArray);
 
-  var data2 = setFont(0, 0, 0, 0, 0);
+function printNote(): Uint8Array {
+  let noteData: number[] = new Array();
 
-  var data3 = setPrinter(4, 0);
-  var data4 = printText("打印小票效果演示:");
-  var data5 = setPrinter(1, 2);
+  let data1 = initPrinter();
 
-  var sb = "";
-  var data6 = setPrinter(4, 1);
+  let data2 = setFont(0, 0, 0, 0, 0);
 
-  var data7 = setFont(0, 1, 1, 0, 0);
+  let data3 = setPrinter(4, 0);
+  let data4 = printText("打印小票效果演示:");
+  let data5 = setPrinter(1, 2);
 
-  var data8 = printText("宁波月湖店\n");
+  let sb = "";
+  let data6 = setPrinter(4, 1);
 
-  var barCodeData = printBarCode(73, 2, 100, 2, "abc1234567890abc");
+  let data7 = setFont(0, 1, 1, 0, 0);
 
-  var data9 = setPrinter(4, 0);
+  let data8 = printText("宁波月湖店\n");
+
+  let barCodeData = printBarCode(73, 2, 100, 2, "abc1234567890abc");
+
+  let data9 = setPrinter(4, 0);
 
   // 字号使用默认
-  var data10 = setFont(0, 0, 0, 0, 0);
+  let data10 = setFont(0, 0, 0, 0, 0);
 
 
   sb += "门店号：574001\n";
@@ -671,7 +707,7 @@ function printNote() {
   sb += "收银员：s004_s004\n";
   sb += "单据日期：2012-06-17\n";
   sb += "打印时间：13:37:24\n";
-  var data11 = printText(sb); // 打印
+  let data11 = printText(sb); // 打印
 
   sb = "";
   sb += "品名            数量        单价      金额\n";
@@ -679,7 +715,7 @@ function printNote() {
   sb += "铁丝挂钩        5.00         2        10.00\n";
   sb += "雨伞            5.00         3        15.00\n";
   // printTable1(resources, mPrinter); // 打印表格
-  var data12 = printText(sb); // 打印
+  let data12 = printText(sb); // 打印
 
   sb = "";
 
@@ -713,56 +749,58 @@ function printNote() {
   } else if (PaperWidth == 724) {
     sb += "================================================================\n";
   }
-  var data13 = printText(sb); // 打印
+  let data13 = printText(sb); // 打印
 
-  var data14 = setPrinter(4, 1);
+  let data14 = setPrinter(4, 1);
 
-  var data15 = setFont(0, 0, 1, 0, 0);
+  let data15 = setFont(0, 0, 1, 0, 0);
 
-  var data16 = printText("谢谢惠顾,欢迎再次光临！\n");
+  let data16 = printText("谢谢惠顾,欢迎再次光临！\n");
 
-  var data17 = printText("Demo 版本！\n");
+  let data17 = printText("Demo 版本！\n");
 
-  var qrCodeData = printBarCode(102, 2, 3, 6, "www.jiangsuxxxx.com");
+  let qrCodeData = printBarCode(102, 2, 3, 6, "www.jiangsuxxxx.com");
 
-  var data18 = setFont(0, 0, 0, 0, 0);
+  let data18 = setFont(0, 0, 0, 0, 0);
 
-  var data19 = setPrinter(4, 1);
+  let data19 = setPrinter(4, 1);
 
-  var data20 = setPrinter(1, 3);
-  try {
-    systemDateTime.getCurrentTime().then((time) => {
-      console.info(`end-----------------time before printNote.....+Succeeded in getting currentTime : ${time}`);
-    }).catch((error) => {
-      console.info(`printNote Failed to get currentTime. message:${error.message}, code:${error.code}`);
-    });
-  } catch (e) {
-    console.info(`printNote Failed to get currentTime. message:${e.message}, code:${e.code}`);
-  }
-  noteData=noteData.concat(data1, data2, data3, data4, data5, data6,data7, data8, barCodeData, data9, data10, data11, data12, data13, data14, data15, data16, data17, qrCodeData, data18, data19, data20)
+  let data20 = setPrinter(1, 3);
+  // try {
+  //   systemDateTime.getCurrentTime().then((time) => {
+  //     console.info(`end-----------------time before printNote.....+Succeeded in getting currentTime : ${time}`);
+  //   }).catch((error) => {
+  //     console.info(`printNote Failed to get currentTime. message:${error.message}, code:${error.code}`);
+  //   });
+  // } catch (e) {
+  //   console.info(`printNote Failed to get currentTime. message:${e.message}, code:${e.code}`);
+  // }
+  noteData =
+  noteData.concat(data1, data2, data3, data4, data5, data6, data7, data8, barCodeData, data9, data10, data11, data12,
+    data13, data14, data15, data16, data17, qrCodeData, data18, data19, data20)
   return pushArray(noteData);
 }
-0
-function toUint8Arr(str) {
-  const buffer = [];
-  for (let i of str) {
-    const _code = i.charCodeAt(0);
-    if (_code < 0x80) {
-      buffer.push(_code);
-    } else if (_code < 0x800) {
-      buffer.push(0xc0 + (_code >> 6));
-      buffer.push(0x80 + (_code & 0x3f));
-    } else if (_code < 0x10000) {
-      buffer.push(0xe0 + (_code >> 12));
-      buffer.push(0x80 + (_code >> 6 & 0x3f));
-      buffer.push(0x80 + (_code & 0x3f));
-    }
-  }
-  return Uint8Array.from(buffer);
-}
 
-function getUsbPrinter(): usb.USBDevice {
-  let usbDevice: usb.USBDevice = null;
+// function toUint8Arr(str) {
+//   const buffer = [];
+//   for (let i of str) {
+//     const _code = i.charCodeAt(0);
+//     if (_code < 0x80) {
+//       buffer.push(_code);
+//     } else if (_code < 0x800) {
+//       buffer.push(0xc0 + (_code >> 6));
+//       buffer.push(0x80 + (_code & 0x3f));
+//     } else if (_code < 0x10000) {
+//       buffer.push(0xe0 + (_code >> 12));
+//       buffer.push(0x80 + (_code >> 6 & 0x3f));
+//       buffer.push(0x80 + (_code & 0x3f));
+//     }
+//   }
+//   return Uint8Array.from(buffer);
+// }
+
+export function getUsbPrinter(): usb.USBDevice | null {
+  let usbDevice: usb.USBDevice | null = null;
   let devicesList: Array<usb.USBDevice> = usb.getDevices();
   if (devicesList.length === 0) {
     console.log(`device list is empty`);
@@ -782,32 +820,33 @@ function getUsbPrinter(): usb.USBDevice {
   console.log(usbDevice.name + ",vid:" + usbDevice.vendorId + ",pid:" + usbDevice.productId);
   return usbDevice;
 }
-async function getImageBuffer(){
+
+async function getImageBuffer(component?: Object): Promise<Uint8Array | null> {
   //打印图片数据
-  let imgBuffer;
+  let imgBuffer: Uint8Array | null = null;
   //1.1    // 获取resourceManager资源管理
-  const context : Context = getContext(this);
-  const resourceMgr : resourceManager.ResourceManager = context.resourceManager;
+  const context: Context = getContext(component);
+  const resourceMgr: resourceManager.ResourceManager = context.resourceManager;
   //1.2  创建ImageSource
-  let fileData:Uint8Array= await resourceMgr.getRawFileContent('goodwork.bmp');
-  console.log("Succeeded in getting RawFileContent");
+  let fileData: Uint8Array = await resourceMgr.getRawFileContent('goodwork.bmp');
   // 获取图片的ArrayBuffer
+  console.log("Succeeded in getting RawFileContent");
   const buffer = fileData.buffer.slice(0);
-  console.log("buffer:",buffer);
-  const imageSource : image.ImageSource = image.createImageSource(buffer);
+  console.log("buffer:", buffer);
+  const imageSource: image.ImageSource = image.createImageSource(buffer);
   //1.3创建PixelMap
-  let pixelMap:PixelMap= await imageSource.createPixelMap();
+  let pixelMap: PixelMap = await imageSource.createPixelMap();
   console.log("Succeeded in creating PixelMap");
-    // 获取图片大小
-  // @ts-ignore
-  let info:ImageInfo =await pixelMap.getImageInfo();
+  // 获取图片大小
+  let info: image.ImageInfo = await pixelMap.getImageInfo();
   console.info('info.width = ' + info.size.width);
   console.info('info.height = ' + info.size.height);
   //获取图像像素的总字节数
   let pixelBytesNumber: number = pixelMap.getPixelBytesNumber();
-  console.log("获取图像像素的总字节数:"+pixelBytesNumber)
+  console.log("获取图像像素的总字节数:" + pixelBytesNumber)
   //读取图像像素数据，结果写入ArrayBuffer里，使用Promise形式返回。指定BGRA_8888格式创建pixelmap，读取的像素数据与原数据保持一致。
-  const readBuffer: ArrayBuffer = new ArrayBuffer(pixelBytesNumber); // pixelBytesNumber为需要创建的像素buffer大小，取值为：height * width *4
+  const readBuffer: ArrayBuffer =
+    new ArrayBuffer(pixelBytesNumber); // pixelBytesNumber为需要创建的像素buffer大小，取值为：height * width *4
   if (pixelMap != undefined) {
     await pixelMap.readPixelsToBuffer(readBuffer);
     console.info('Succeeded in reading image pixel data.'); // 符合条件则进入
@@ -816,12 +855,13 @@ async function getImageBuffer(){
     let uint8View = new Uint8Array(readBuffer);
     // 将Uint8Array转换为Array
     let array = Array.from(uint8View);
-    imgBuffer= printImage(array,200,138,0,576,0,160);
+    imgBuffer = printImage(array, 200, 138, 0, 576, 0, 160);
   }
   //1.4释放pixelMap。
   pixelMap.release();
-  return pushArray(imgBuffer);
+  return imgBuffer;
 }
+
 async function usbPrint(usbDevice: usb.USBDevice): Promise<void> {
   let hasRight = await getUsbRight(usbDevice.name);
   console.log("hasRight:" + hasRight);
@@ -832,15 +872,15 @@ async function usbPrint(usbDevice: usb.USBDevice): Promise<void> {
   let devicepipe: usb.USBDevicePipe = usb.connectDevice(usbDevice);
   let interfaces: usb.USBInterface = usbDevice.configs[0].interfaces[0];
 
-  let ret: number = usb.claimInterface(devicepipe, interfaces,true);
+  let ret: number = usb.claimInterface(devicepipe, interfaces, true);
   console.log(`claimInterface = ${ret}`)
   if (ret !== 0) {
     console.log("fail to claimInterface");
     return;
   }
   let endPointsArr: usb.USBEndpoint[] = interfaces.endpoints;
-  let outEndPoint: usb.USBEndpoint = null;
-  let inEndPoint: usb.USBEndpoint = null;
+  let outEndPoint: usb.USBEndpoint;
+  let inEndPoint: usb.USBEndpoint;
   for (let ep of endPointsArr) {
     if (ep.type === 2) {
       if (ep.direction === 0) {
@@ -851,18 +891,15 @@ async function usbPrint(usbDevice: usb.USBDevice): Promise<void> {
     }
   }
   //写数据
-  // let gbkBuffer=iconv.encode("中文测试\r\n",'gbk');
-  // let buffer=new Uint8Array(gbkBuffer);
-
-  let buffer=printNote();
-  let writeLength = await bulkTransfer(devicepipe, outEndPoint, buffer, 5000);
+  let buffer = printNote();
+  let writeLength = await bulkTransfer(devicepipe, outEndPoint!, buffer, 5000);
   console.log("writeLength:" + writeLength);
 
-  let imgBuffer= await getImageBuffer();
-  let imgWriteLength = await bulkTransfer(devicepipe, outEndPoint, imgBuffer, 10000);
-  console.log("imgWriteLength:" + imgWriteLength);
-
-
+  let imgBuffer: Uint8Array | null = await getImageBuffer();
+  if (imgBuffer !== null) {
+    let imgWriteLength = await bulkTransfer(devicepipe, outEndPoint!, imgBuffer, 10000);
+    console.log("imgWriteLength:" + imgWriteLength);
+  }
 
 
   //关闭端口
@@ -870,115 +907,294 @@ async function usbPrint(usbDevice: usb.USBDevice): Promise<void> {
   console.log("releaseInterfaceResult:" + releaseInterfaceResult);
   let closePipeResult = usb.closePipe(devicepipe);
   console.log("closePipeResult:" + closePipeResult);
-  outEndPoint = null;
-  inEndPoint = null;
-  interfaces = null;
-  devicepipe = null;
-  usbDevice = null;
-  // let imgBuffer;
-  // //打印图片数据
-  // //1.1    // 获取resourceManager资源管理
-  // const context : Context = getContext(this);
-  // const resourceMgr : resourceManager.ResourceManager = context.resourceManager;
-  // //1.2  创建ImageSource
-  // resourceMgr.getRawFileContent('goodwork.bmp').then((fileData : Uint8Array) => {
-  //   console.log("Succeeded in getting RawFileContent")
-  //   // 获取图片的ArrayBuffer
-  //   const buffer = fileData.buffer.slice(0);
-  //   console.log("buffer:",buffer);
-  //   const imageSource : image.ImageSource = image.createImageSource(buffer);
-  //   //1.3创建PixelMap
-  //   imageSource.createPixelMap().then(async (pixelMap: image.PixelMap) => {
-  //     console.log("Succeeded in creating PixelMap")
-  //     // 获取图片大小
-  //     pixelMap.getImageInfo().then( (info : image.ImageInfo) => {
-  //       console.info('info.width = ' + info.size.width);
-  //       console.info('info.height = ' + info.size.height);
-  //
-  //       // @ts-ignore
-  //     }).catch((err : BusinessError) => {
-  //       console.error("Failed to obtain the image pixel map information.And the error is: " + err);
-  //     });
-  //     //获取图像像素的总字节数
-  //     let pixelBytesNumber: number = pixelMap.getPixelBytesNumber();
-  //     console.log("获取图像像素的总字节数:"+pixelBytesNumber)
-  //     //读取图像像素数据，结果写入ArrayBuffer里，使用Promise形式返回。指定BGRA_8888格式创建pixelmap，读取的像素数据与原数据保持一致。
-  //     const readBuffer: ArrayBuffer = new ArrayBuffer(pixelBytesNumber); // pixelBytesNumber为需要创建的像素buffer大小，取值为：height * width *4
-  //     if (pixelMap != undefined) {
-  //       pixelMap.readPixelsToBuffer(readBuffer).then(() => {
-  //         console.info('Succeeded in reading image pixel data.'); // 符合条件则进入
-  //         // 假设你有一个ArrayBuffer对象 readBuffer
-  //
-  //         // 创建一个Uint8Array视图
-  //         let uint8View = new Uint8Array(readBuffer);
-  //
-  //         // 将Uint8Array转换为Array
-  //         let array = Array.from(uint8View);
-  //         imgBuffer= printImage(array,200,138,0,576,0,160);
-  //         // @ts-ignore
-  //       }).catch((error: BusinessError) => {
-  //         console.error('Failed to read image pixel data.'); // 不符合条件则进入
-  //       })
-  //     }
-  //     //1.4释放pixelMap。
-  //     pixelMap.release();
-  //     // @ts-ignore
-  //   }).catch((err : BusinessError) => {
-  //     console.error("Failed to creating PixelMap")
-  //   });
-  //   // @ts-ignore
-  // }).catch((err : BusinessError) => {
-  //   console.error("Failed to get RawFileContent")
-  // });
+  // outEndPoint = null;
+  // inEndPoint = null;
+  // interfaces = null;
+  // devicepipe = null;
+  // usbDevice = null;
 }
 
-async function getUsbRight(usbName) {
+async function getUsbRight(usbName: string | null) {
   const result: boolean = await usb.requestRight(usbName);
-  console.log("result:" + result);
+  console.log("getUsbRight result:" + result);
   return result;
 }
 
-async function bulkTransfer(devicepipe, endPoint, buffer, timeout) {
+// async function read(devicepipe: usb.USBDevicePipe, statusEndpoint: usb.USBEndpoint, queryCommand: Uint8Array): Promise<void> {
+//   // 读取
+//   let writeLength = await bulkTransfer(devicepipe, statusEndpoint, queryCommand, 5000);
+//   console.log("查询命令发送长度: " + writeLength);
+// }
+async function bulkTransfer(devicepipe: usb.USBDevicePipe, endPoint: usb.USBEndpoint, buffer: Uint8Array,
+                            timeout?: number) {
   const result: number = await usb.bulkTransfer(devicepipe, endPoint, buffer, timeout);
   console.log("bulkTransfer result:" + result);
   return result;
+}
+
+async function receivePrinterStatus(devicepipe: usb.USBDevicePipe, statusEndpoint: usb.USBEndpoint): Promise<void> {
+  // 假设接收状态数据的缓冲区大小，这个大小可能需要根据打印机返回数据的实际情况调整
+  let buffer = new Uint8Array(1024);
+  console.log("开始: ");
+  let readLength = await bulkTransfer(devicepipe, statusEndpoint, buffer, 5000);
+  console.log("接收状态信息长度: " + readLength);
+  // 根据打印机文档解析状态信息
+  if (readLength > 0) {
+    // 这里只是示例，实际解析需要根据打印机的状态返回格式
+    let statusData = buffer.slice(0, readLength);
+    console.log("接收到的状态数据: " + statusData);
+    // 假设状态数据的第一个字节表示打印机状态
+    // let printerStatus = statusData[0];
+    // if (printerStatus === 0) {
+    //   console.log("打印机正常");
+    // } else if (printerStatus === 1) {
+    //   console.log("打印机缺纸");
+    // } else {
+    //   console.log("打印机状态未知");
+    // }
+  }
+}
+
+function getUsbPrinters(): Array<usb.USBDevice> | null {
+  let usbDevice: usb.USBDevice | null = null;
+  let devicesList: Array<usb.USBDevice> = usb.getDevices();
+  if (devicesList.length === 0) {
+    console.log(`device list is empty`);
+    return null;
+  }
+  console.log("deviceList.length:" + devicesList.length);
+  return devicesList;
 }
 
 function isUsbPrinter(device: usb.USBDevice): boolean {
   console.log("vid:" + device.vendorId + ",pid:" + device.productId);
   let vendorId = device.vendorId;
   let productId = device.productId;
-  if ((0x0483 === vendorId && 0x5720 === productId) || (0x067B === vendorId && 0x2305 === productId) || (0x0483 === vendorId && 0x5723 === productId) || (0x0483 === vendorId && 0x5724 === productId) || (0x0484 === vendorId && 0x5724 === productId)) {
+  if ((0x0483 === vendorId && 0x5720 === productId) || (0x067B === vendorId && 0x2305 === productId) ||
+    (0x0483 === vendorId && 0x5723 === productId) || (0x0483 === vendorId && 0x5724 === productId) ||
+    (0x0484 === vendorId && 0x5724 === productId)) {
     return true;
   } else {
     return false;
   }
 }
 
-@Entry
-@Component
-struct Index {
-  @State message: string = 'Hello World';
+let outEndPoint: usb.USBEndpoint | null;
+let inEndPoint: usb.USBEndpoint | null;
+let devicepipe: usb.USBDevicePipe | null;
+let interfaces: usb.USBInterface | null;
 
-  build() {
-    Row() {
-      Column() {
-        // Text(this.message)
-        //   .fontSize(50)
-        //   .fontWeight(FontWeight.Bold)
-        Button("点我打印小票", { type: ButtonType.Normal }).onClick(() => {
-          promptAction.showToast({ message: "开始打印，请稍后......" })
-          let usbDevice: usb.USBDevice = getUsbPrinter();
-          if (usbDevice === null) {
-            promptAction.showToast({ message: "请检查USB打印机是否接入" })
-            return;
-          }
-          usbPrint(usbDevice);
-          promptAction.showToast({ message: "小票打印完成" })
-        })
+async function usbConnect(usbDevice: usb.USBDevice): Promise<boolean> {
+  let hasRight = await getUsbRight(usbDevice.name);
+  console.log("hasRight:" + hasRight);
+  if (!hasRight) {
+    console.log("fail to get usb device request");
+    return false;
+  }
+  devicepipe = usb.connectDevice(usbDevice);
+  interfaces = usbDevice.configs[0].interfaces[0];
+
+  let ret: number = usb.claimInterface(devicepipe, interfaces, true);
+  console.log(`claimInterface = ${ret}`)
+  if (ret !== 0) {
+    console.log("fail to claimInterface");
+    return false;
+  }
+  let endPointsArr: usb.USBEndpoint[] = interfaces.endpoints;
+  // let outEndPoint: usb.USBEndpoint;
+  // let inEndPoint: usb.USBEndpoint;
+  for (let ep of endPointsArr) {
+    if (ep.type === 2) {
+      if (ep.direction === 0) {
+        outEndPoint = ep;
+      } else if (ep.direction === 0x80) {
+        inEndPoint = ep;
+        console.error("开始复制inEndPoint :" + JSON.stringify(inEndPoint));
       }
-      .width('100%')
     }
-    .height('100%')
   }
 }
+
+//断开连接
+async function usbDisconnect(devicepipe: usb.USBDevicePipe, interfaces: usb.USBInterface): Promise<void> {
+  // 释放接口
+  let releaseInterfaceResult = usb.releaseInterface(devicepipe, interfaces);
+  console.log("releaseInterfaceResult:" + releaseInterfaceResult);
+  // 关闭设备管道
+  let closePipeResult = usb.closePipe(devicepipe);
+  console.log("closePipeResult:" + closePipeResult);
+}
+
+class SheetInfoClass {
+  title: string;
+  action: () => void;
+  // 新增点击回调属性
+  onDeviceSelected: ((device: usb.USBDevice) => void) | null = null;
+
+  constructor(device: usb.USBDevice) {
+    this.title = `${device.name} ${device.productName} \n` || `USB设备\n`;
+    this.action = async () => {
+      if (isUsbPrinter(device)) {
+        if (this.onDeviceSelected) {
+          this.onDeviceSelected(device);
+        }
+
+      } else {
+        // Index.instance.connect = false;
+        promptAction.showToast({
+          message: ` ${device.name}设备不可用`
+        });
+      }
+    };
+  }
+}
+
+let selectedDevice: usb.USBDevice | null = null;
+
+export function getDevice() {
+  return selectedDevice;
+}
+
+async function openUsb(): Promise<boolean> {
+  console.log('openUsb');
+  console.log('this.selectedDevice');
+  return new Promise<boolean>((resolve, reject) => {
+    if (selectedDevice !== null) {
+      // let devicepipe: usb.USBDevicePipe = usb.connectDevice(this.selectedDevice);
+      // let interfaces: usb.USBInterface = this.selectedDevice.configs[0].interfaces[0];
+      usbDisconnect(devicepipe, interfaces).then(() => {
+        promptAction.showToast({
+          message: '已断开连接'
+        });
+        selectedDevice = null;
+      }).catch((error) => {
+        console.error("断开连接出现错误:", error);
+        promptAction.showToast({
+          message: '断开连接失败'
+        });
+      });
+      return true;
+    }
+    let usbDevices: Array<usb.USBDevice> | null = getUsbPrinters();
+    console.log('usbDevices.length' + usbDevices.length);
+    if (usbDevices != null) {
+      console.log(`usbDevices ${usbDevices.length}`);
+      let sheetsData: Array<SheetInfoClass> = usbDevices.map((device) => {
+        let sheetInfo = new SheetInfoClass(device);
+        console.log('创建');
+        //函数赋值
+        // 函数赋值：设备选择回调
+        sheetInfo.onDeviceSelected = async (device) => {
+          selectedDevice = device;
+          // 在这里添加连接设备的逻辑
+          try {
+            console.log('选择设备开始连接');
+            await usbConnect(device);
+            if (inEndPoint && outEndPoint) {
+              selectedDevice = device;
+              promptAction.showToast({
+                message: `选择了 ${device.name}`
+              });
+              console.log('设备连接成功');
+              resolve(true);
+            } else {
+              promptAction.showToast({
+                message: `连接 ${device.name}失败`
+              });
+              reject(false);
+            }
+          } catch (error) {
+            promptAction.showToast({
+              message: `连接 ${device.name}失败`
+            });
+            reject(false);
+          }
+        };
+
+        return sheetInfo;
+      });
+      // 显示 ActionSheet，并等待用户操作
+      ActionSheet.show({
+        title: '提示',
+        message: 'USB列表',
+        autoCancel: false,
+        alignment: DialogAlignment.Bottom,
+        confirm: {
+          value: '取消',
+          action: () => {
+            promptAction.showToast({
+              message: '选择取消'
+            });
+            reject(false);
+          }
+        },
+        sheets: sheetsData
+      });
+    } else {
+      promptAction.showToast({
+        message: '未检测到USB设备'
+      });
+      return false;
+    }
+  });
+}
+
+class USBPort implements BasePrinterPort {
+  constructor(portType: usb.USBDevice) {
+    console.log('USBPort Constructor');
+  }
+
+  async open(): Promise<boolean> {
+
+    // usbConnect()
+    const result = await openUsb();
+    console.log('open USB Printer success' + result);
+    return result;
+    console.log('open USB Printer success');
+    // return true;
+  }
+
+  close(): void {
+    console.log('close USB Printer');
+    usbDisconnect(devicepipe, interfaces).then(() => {
+      promptAction.showToast({
+        message: '已断开连接'
+      });
+      selectedDevice = null;
+    }).catch((error) => {
+      console.error("断开连接出现错误:", error);
+      promptAction.showToast({
+        message: '断开连接失败'
+      });
+    });
+  }
+
+  async writeUint8Array(data: Uint8Array): Promise<number> {
+    console.log('success to write Data to USB Printer');
+    let writeLength = await bulkTransfer(devicepipe, outEndPoint!, data, 5000);
+    return writeLength;
+  }
+
+  async write(data: number[]): Promise<number> {
+    console.log('success to write Data to USB Printer');
+    let buffer = pushArray(data)
+    let writeLength = await bulkTransfer(devicepipe, outEndPoint!, buffer, 5000);
+    return writeLength;
+  }
+
+  read(data: number[]): number {
+    console.log('success to read Data from USB Printer');
+    //
+    // async function bulkTransfer(devicepipe: usb.USBDevicePipe, endPoint: usb.USBEndpoint, buffer: Uint8Array,
+    //                             timeout?: number) {
+    //   const result: number = await usb.bulkTransfer(devicepipe, endPoint, buffer, timeout);
+    //   console.log("bulkTransfer result:" + result);
+    //   return result;
+    // }
+
+    return 0;
+  }
+}
+
+//导出类
+export { USBPort };
