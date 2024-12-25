@@ -7,13 +7,13 @@ class PrinterInstance {
   private static mPrinter: PrinterInstance | null = null;
   private myPrinterPort: BasePrinterPort;
 
-  private constructor(portType: usb.USBDevice | string) {
-    if (typeof portType === 'string') {
-      console.log('创建一个蓝牙打印机' + typeof portType);
-      this.myPrinterPort = new BluetoothPort(portType);
+  private constructor(value: string) {
+    if ('bluetooth' === value) {
+      console.log('创建一个蓝牙打印机');
+      this.myPrinterPort = new BluetoothPort(value);
     } else {
-      console.log('创建一个usb打印机' + typeof portType);
-      this.myPrinterPort = new USBPort(portType);
+      console.log('创建一个usb打印机');
+      this.myPrinterPort = new USBPort(value);
     }
   }
 
@@ -35,11 +35,11 @@ class PrinterInstance {
   //
 
 
-  public static getPrinterInstance(portType: usb.USBDevice | string): PrinterInstance {
+  public static getPrinterInstance(value: string): PrinterInstance {
     console.log("getPrinterInstance start...");
     if (PrinterInstance.mPrinter === null) {
       console.log("new ...");
-      PrinterInstance.mPrinter = new PrinterInstance(portType);
+      PrinterInstance.mPrinter = new PrinterInstance(value);
     } else {
       console.log("already has a instance ...");
     }
@@ -58,7 +58,6 @@ class PrinterInstance {
   public writeDataToPrinter(data: number[]): Promise<number> {
     return this.myPrinterPort.write(new Array());
   }
-
 
   public writeUint8ArrayDataToPrinter(data: Uint8Array): Promise<number> {
     return this.myPrinterPort.writeUint8Array(data);

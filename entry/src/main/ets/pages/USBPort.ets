@@ -1092,10 +1092,10 @@ async function openUsb(): Promise<boolean> {
             await usbConnect(device);
             if (inEndPoint && outEndPoint) {
               selectedDevice = device;
-              promptAction.showToast({
-                message: `选择了 ${device.name}`
-              });
-              console.log('设备连接成功');
+              // promptAction.showToast({
+              //   message: `选择了 ${device.name}`
+              // });
+              console.log(`设备连接成功,选择了 ${device.name}`);
               resolve(true);
             } else {
               promptAction.showToast({
@@ -1140,7 +1140,7 @@ async function openUsb(): Promise<boolean> {
 }
 
 class USBPort implements BasePrinterPort {
-  constructor(portType: usb.USBDevice) {
+  constructor(portType: string) {
     console.log('USBPort Constructor');
   }
 
@@ -1156,6 +1156,7 @@ class USBPort implements BasePrinterPort {
 
   close(): void {
     console.log('close USB Printer');
+
     usbDisconnect(devicepipe, interfaces).then(() => {
       promptAction.showToast({
         message: '已断开连接'
