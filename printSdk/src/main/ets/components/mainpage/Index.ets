@@ -1,6 +1,7 @@
 //导入页面路由模块
 import router from '@ohos.router';
 import usb from '@ohos.usb';
+import {PrinterInstance} from './PrinterInstance';
 @Entry
 @Component
 struct Index {

@@ -1,0 +1,10 @@
+{
+  "module": {
+    "name": "printSdk",
+    "type": "har",
+    "deviceTypes": [
+      "default",
+      "tablet"
+    ]
+  }
+}
