@@ -13,7 +13,7 @@ import resourceManager from '@ohos.resourceManager';
 
 let PaperWidth = 576;
 
-function pushArray(arr: number[]) {
+export function pushArray(arr: number[]) {
   return new Uint8Array(arr);
 
 }
@@ -96,7 +96,7 @@ let strTogbk = function () {
   };
 };
 
-function toGbkBytes(str: string): number[] {
+export function toGbkBytes(str: string): number[] {
   let str2: string = strTogbk().encode(str)
   let byteArr: number[] = new Array();
   for (let i = 0; i < str2.length; i++) {
@@ -140,7 +140,7 @@ function toGbkBytes(str: string): number[] {
  * @param 需要打印的文本数据
  * @return result 返回一个要打印的byte数组类型的数据
  */
-function printText(content: string) {
+export function printText(content: string) {
   let contentData = toGbkBytes(content);
   return contentData;
 }
@@ -155,7 +155,7 @@ function printText(content: string) {
  * @param {*} left 左边距，当对齐方式为 无对齐时，可以设置该值调整左边距 （注意左边距须为8的整数倍，否则会有异常）
  * @param {*} level   图片二值化阀值，用来调试图片二值化效果。   取值范围  0-255  建议调试值取值范围  96-196  不建议取值为255或接近255。因为取值为255或接近255时，可能导致图片取点全黑，可能损坏打印机。
  */
-function printImage(data: number[], width: number, height: number, alignType: number, paperWidth: number, left: number,
+export function printImage(data: number[], width: number, height: number, alignType: number, paperWidth: number, left: number,
                     level: number): Uint8Array {
   if (level < 0 || level > 255 || level === 255) {
     level = 128;
@@ -270,7 +270,7 @@ function printImage(data: number[], width: number, height: number, alignType: nu
 /**
  * 获取条码打印数据
  */
-function printBarCode(barcodeType: number, param1: number, param2: number, param3: number, content: string) {
+export function printBarCode(barcodeType: number, param1: number, param2: number, param3: number, content: string) {
   let PDF417 = 100;
   let DATAMATRIX = 101;
   let QRCODE = 102;
@@ -382,7 +382,7 @@ function printBarCode(barcodeType: number, param1: number, param2: number, param
  * @return void
  * @Description 执行切纸，打印机得有切刀
  */
-function cutPaper(cutPaperType: number, n: number) {
+export function cutPaper(cutPaperType: number, n: number) {
   let buffer: number[] = new Array();
   if (cutPaperType == 48 || cutPaperType == 49) {
     n = 0;
@@ -397,7 +397,7 @@ function cutPaper(cutPaperType: number, n: number) {
 /**
  * 打印自检页
  */
-function printSelfCheckingPage() {
+export function printSelfCheckingPage() {
   let buffer: number[] = new Array();
   buffer.push(0x1d);
   buffer.push(0x28);
@@ -413,7 +413,7 @@ function printSelfCheckingPage() {
  * 打印预存储位图
  * @param n 打印预存的第n张位图。n的取值范围[0-7]
  */
-function printDownloadBitmap(n: number) {
+export function printDownloadBitmap(n: number) {
   let buffer: number[] = new Array();
   buffer.push(0x1c);
   buffer.push(0x50);
@@ -421,7 +421,7 @@ function printDownloadBitmap(n: number) {
   return buffer;
 }
 
-function getBarcodeCommand1(content: number[], barcodeType: number, length: number, param1: number, param2: number,
+export function getBarcodeCommand1(content: number[], barcodeType: number, length: number, param1: number, param2: number,
                             param3: number) {
   let index = 0;
   let tmpByte = content;
@@ -458,7 +458,7 @@ function getBarcodeCommand1(content: number[], barcodeType: number, length: numb
   return command;
 }
 
-function getBarcodeCommand2(content: string, barcodeType: number, param1: number, param2: number, param3: number) {
+export function getBarcodeCommand2(content: string, barcodeType: number, param1: number, param2: number, param3: number) {
   let tmpByte = toGbkBytes(content);
   let command: number[] = new Array();
   command.push(29);
@@ -477,7 +477,7 @@ function getBarcodeCommand2(content: string, barcodeType: number, param1: number
   return command;
 }
 
-function getBarcodeCommand3(content: string, barcodeType: number, param1: number, param2: number, param3: number) {
+export function getBarcodeCommand3(content: string, barcodeType: number, param1: number, param2: number, param3: number) {
   let index = 0;
   let tmpByte = toGbkBytes(content);
   let command: number[] = new Array();
@@ -512,7 +512,7 @@ function getBarcodeCommand3(content: string, barcodeType: number, param1: number
   return command;
 }
 
-function getBarcodeCommand4(content: string, barcodeType: number, length: number, param1: number, param2: number,
+export function getBarcodeCommand4(content: string, barcodeType: number, length: number, param1: number, param2: number,
                             param3: number) {
   let index = 0;
   let tmpByte = toGbkBytes(content);
@@ -548,7 +548,7 @@ function getBarcodeCommand4(content: string, barcodeType: number, length: number
   return command;
 }
 
-function isNum(temp: number) {
+export  function isNum(temp: number) {
   return temp >= 48 && temp <= 57;
 }
 
@@ -558,7 +558,7 @@ function isNum(temp: number) {
  * @return 字节数组
  * @Description 初始化打印机
  */
-function initPrinter() {
+export  function initPrinter() {
   let buffer: number[] = new Array(2);
   buffer.push(0x1b);
   buffer.push(0x40);
@@ -570,7 +570,7 @@ function initPrinter() {
  * @return 字节数组
  * @Description 设置距离左边距点数
  */
-function setLeftMargin(inchs: number) {
+export  function setLeftMargin(inchs: number) {
   let buffer: number[] = new Array();
   buffer.push(29);
   buffer.push(76);
@@ -588,7 +588,7 @@ function setLeftMargin(inchs: number) {
  * @return 字节数组
  * @Description 这种打印字体的类型，大小，加粗下划线
  */
-function setFont(mCharacterType: number, mWidth: number, mHeight: number, mBold: number, mUnderline: number) {
+export  function setFont(mCharacterType: number, mWidth: number, mHeight: number, mBold: number, mUnderline: number) {
   let buffer: number[] = new Array()
   let mFontSize = 0;
   let mFontMode = 0;
@@ -635,7 +635,7 @@ function setFont(mCharacterType: number, mWidth: number, mHeight: number, mBold:
  * @param command Command对象
  * @param value   对其模式： 0-左对齐,1-居中,2-右对齐
  */
-function setPrinter(command: number, value: number) {
+export  function setPrinter(command: number, value: number) {
   let buffer: number[] = new Array();
   switch (command) {
     case 0: // 打印并进纸 ESC J n
@@ -676,7 +676,7 @@ export function stringToUint8Array(inputString: string): Uint8Array {
 // let resultArray = stringToUint8Array(myString);
 // console.log(resultArray);
 
-function printNote(): Uint8Array {
+export  function printNote(): Uint8Array {
   let noteData: number[] = new Array();
 
   let data1 = initPrinter();
@@ -1177,9 +1177,11 @@ class USBPort implements BasePrinterPort {
   }
 
   async write(data: number[]): Promise<number> {
-    console.log('success to write Data to USB Printer');
+    console.log('write data '+JSON.stringify(data));
     let buffer = pushArray(data)
+    console.log('pushArray '+JSON.stringify(buffer));
     let writeLength = await bulkTransfer(devicepipe, outEndPoint!, buffer, 5000);
+    console.log('success to write Data to USB Printer writeLength '+ writeLength);
     return writeLength;
   }
 

@@ -56,7 +56,7 @@ class PrinterInstance {
   }
 
   public writeDataToPrinter(data: number[]): Promise<number> {
-    return this.myPrinterPort.write(new Array());
+    return this.myPrinterPort.write(data);
   }
 
   public writeUint8ArrayDataToPrinter(data: Uint8Array): Promise<number> {
