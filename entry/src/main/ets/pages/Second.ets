@@ -1,23 +1,16 @@
 import router from '@ohos.router';
-import usb from '@ohos.usb';
+
 import promptAction from '@ohos.promptAction';
-import { PrinterInstance } from './PrinterInstance';
-import { cutPaper, getUsbPrinter, printNote, pushArray, stringToUint8Array, USBPort } from './USBPort';
+// import { PrinterInstance } from './PrinterInstance';
+// import { cutPaper, getUsbPrinter, printNote, pushArray, stringToUint8Array, USBPort } from './USBPort';
 import resourceManager from '@ohos.resourceManager';
 import image from '@ohos.multimedia.image';
 import util from '@ohos.util'; // 需要使用util模块函数对文件编码
+import { USBPort } from 'printSdk';
+import { PrinterInstance } from 'printSdk';
+import { stringToUint8Array ,printNote,cutPaper,pushArray} from 'printSdk';
 
 let PaperWidth = 576;
-
-// function pushArray(numberArray: number[]) {
-//
-//   let uint8Array = new Uint8Array(numberArray.length);
-//   for (let i = 0; i < numberArray.length; i++) {
-//     uint8Array[i] = numberArray[i] as number as Uint8Array[number];
-//   }
-//   return uint8Array;
-//
-// }
 
 @Entry
 @Component

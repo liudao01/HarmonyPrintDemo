@@ -1,5 +1,5 @@
 import {BasePrinterPort} from './BasePrintPort'
-class BluetoothPort implements BasePrinterPort{
+ class BluetoothPort implements BasePrinterPort{
   constructor(portType:string) {
     console.log('BluetoothPort Constructor');
   }

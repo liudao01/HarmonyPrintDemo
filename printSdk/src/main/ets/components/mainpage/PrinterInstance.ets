@@ -3,7 +3,7 @@ import { USBPort } from './USBPort'
 import { BluetoothPort } from './BluetoothPort'
 import { BasePrinterPort } from './BasePrintPort'
 
-class PrinterInstance {
+export class PrinterInstance {
   private static mPrinter: PrinterInstance | null = null;
   private myPrinterPort: BasePrinterPort;
 
@@ -69,4 +69,4 @@ class PrinterInstance {
 }
 
 //导出类
-export { PrinterInstance }
+// export { PrinterInstance }
